@@ -9,4 +9,5 @@ Implementation Notes
 
 Tested on Python ``3.5.x``
 
-Using the `Pillow library <http://pillow.readthedocs.org/en/3.0.x/handbook/tutorial.html>`_ for the actual image manipulations.
+Using the `Pillow library <http://pillow.readthedocs.org/en/3.0.x/handbook/tutorial.html>`_ for the actual image
+manipulations.
