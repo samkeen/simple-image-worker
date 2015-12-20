@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The Worker Queue Example Infrastructure",
+  "Metadata" : {
+  },
+  "Resources": {
+    "ImageManipulationWorkQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    }
+  },
+  "Outputs": {
+    "ImageManipulationWorkQueue": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ImageManipulationWorkQueue",
+          "Arn"
+        ]
+      },
+      "Description": "The Work Queue to hold requests to process images"
+    }
+  }
+}
