@@ -6,7 +6,9 @@
   "Resources": {
     "ImageManipulationWorkQueue": {
       "Type": "AWS::SQS::Queue",
-      "Properties": {}
+      "Properties": {
+        "QueueName": "ImageManipulationWorkQueue"
+      }
     }
   },
   "Outputs": {
