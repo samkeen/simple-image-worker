@@ -4,26 +4,43 @@ from PIL import Image
 import requests
 
 
-def process_image(source_image_url, image_output_dir):
+# ======= Excuse my procedural coding style ========
+# I felt it better to keep this sample as simple as possible, working under
+# the assumption that many of those exploring this file will not have
+# Python as one of their primary languages.
+# So rather than going full OO and requiring the reader to understand Python
+# name spacing and packaging, I've kept it to a single, procedural file,
+# one that can easily be refactored to a more appropriate style.
+
+
+def process_image(source_image_url, original_img_path):
     # http://docs.python-requests.org/en/latest/_static/requests-sidebar.png
     image_request = requests.get(source_image_url, stream=True)
     if image_request.status_code == 200:
-        with open(image_output_dir, 'wb') as f:
+        with open(original_img_path, 'wb') as f:
             for chunk in image_request:
                 f.write(chunk)
 
     size = (128, 128)
 
-    path_parts = os.path.splitext(image_output_dir)
-    outfile = path_parts[0] + ".thumbnail"
-    if image_output_dir != outfile:
+    path_parts = os.path.splitext(original_img_path)
+    thumb_img_path = path_parts[0] + ".thumbnail"
+    if original_img_path != thumb_img_path:
         try:
-            im = Image.open(image_output_dir)
+            im = Image.open(original_img_path)
             im.thumbnail(size)
-            outfile = outfile + "." + im.format.lower()
-            im.save(outfile, im.format)
+            thumb_img_path = thumb_img_path + "." + im.format.lower()
+            im.save(thumb_img_path, im.format)
+            return thumb_img_path
         except IOError:
-            print("cannot create thumbnail for", image_output_dir)
+            print("cannot create thumbnail for", original_img_path)
+
+
+def put_to_s3(image_name, image_file_path):
+    s3 = boto3.resource('s3')
+    with open(image_file_path, 'rb') as image_bytes:
+        # https://boto3.readthedocs.org/en/latest/reference/services/s3.html#S3.Client.put_object
+        s3.Bucket('workerqueuesystem-processedimagesbucket-bt98wq7j0pfc').put_object(Key=image_name, Body=image_bytes)
 
 
 # see https://boto3.readthedocs.org/en/latest/guide/sqs.html
@@ -47,7 +64,8 @@ while True:
         # get reference to the download image directory
         this_directory = os.path.abspath(os.path.dirname(__file__))
         image_path = os.path.join(this_directory, 'images', 'downloaded_image')
-        process_image(message_body, image_path)
+        processed_image_path = process_image(message_body, image_path)
+        put_to_s3('udemy.png', processed_image_path)
 
         # Once you receive the message, you must delete it from the queue to acknowledge that you processed
         # the message and no longer need it

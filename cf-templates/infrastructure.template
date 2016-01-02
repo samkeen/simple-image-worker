@@ -1,13 +1,110 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "The Worker Queue Example Infrastructure",
-  "Metadata" : {
+  "Metadata": {
   },
   "Resources": {
     "ImageManipulationWorkQueue": {
       "Type": "AWS::SQS::Queue",
       "Properties": {
         "QueueName": "ImageManipulationWorkQueue"
+      }
+    },
+    "ProcessedImagesBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead"
+      }
+    },
+    "Ec2Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "Ec2RoleInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "Ec2Role"
+          }
+        ]
+      }
+    },
+    "Ec2RolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "root",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "EnableToLocateTheProcessedImagesBucket",
+              "Effect": "Allow",
+              "Action": [
+                "s3:ListBucket"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "ProcessedImagesBucket"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Sid": "EnableReadWriteAccessToProcessedImagesBucket",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "ProcessedImagesBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "Ec2Role"
+          }
+        ]
       }
     }
   },
@@ -20,6 +117,16 @@
         ]
       },
       "Description": "The Work Queue to hold requests to process images"
+    },
+    "ProcessedImagesBucket": {
+      "Value": {
+        "Ref": "ProcessedImagesBucket"
+      }
+    },
+    "WebAppRoleProfileName": {
+      "Value": {
+        "Ref": "Ec2RoleInstanceProfile"
+      }
     }
   }
 }
