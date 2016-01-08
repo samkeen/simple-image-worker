@@ -16,6 +16,38 @@
         "AccessControl": "PublicRead"
       }
     },
+    "BucketPublicReadAccess": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ProcessedImagesBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Sid": "ReadAccessToAnonymous",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "ProcessedImagesBucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
     "Ec2Role": {
       "Type": "AWS::IAM::Role",
       "Properties": {
