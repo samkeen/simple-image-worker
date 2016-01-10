@@ -13,6 +13,19 @@ import requests
 # one that can easily be refactored to a more appropriate style.
 
 
+def get_images_bucket_name():
+    """
+    Retrieves the name of the S3 image storage bucket from the environment
+
+    :return: The AWS name of the bucket
+    """
+    if 'S3_BUCKET_NAME' in os.environ:
+        s3_bucket_name = os.environ['S3_BUCKET_NAME'].strip()
+    else:
+        raise Exception('No "S3_BUCKET_NAME" environment variable found')
+    return s3_bucket_name
+
+
 def process_image(source_image_url, original_img_path):
     # http://docs.python-requests.org/en/latest/_static/requests-sidebar.png
     image_request = requests.get(source_image_url, stream=True)
@@ -36,12 +49,14 @@ def process_image(source_image_url, original_img_path):
             print("cannot create thumbnail for", original_img_path)
 
 
-def put_to_s3(image_name, image_file_path):
+def put_to_s3(s3_bucket_name, image_name, image_file_path):
     s3 = boto3.resource('s3')
     with open(image_file_path, 'rb') as image_bytes:
         # https://boto3.readthedocs.org/en/latest/reference/services/s3.html#S3.Client.put_object
-        s3.Bucket('workerqueuesystem-processedimagesbucket-bt98wq7j0pfc').put_object(Key=image_name, Body=image_bytes)
+        s3.Bucket(s3_bucket_name).put_object(Key=image_name, Body=image_bytes)
 
+
+s3_bucket_name = get_images_bucket_name()
 
 # see https://boto3.readthedocs.org/en/latest/guide/sqs.html
 sqs = boto3.resource('sqs')
@@ -65,7 +80,7 @@ while True:
         this_directory = os.path.abspath(os.path.dirname(__file__))
         image_path = os.path.join(this_directory, 'images', 'downloaded_image')
         processed_image_path = process_image(message_body, image_path)
-        put_to_s3('udemy.png', processed_image_path)
+        put_to_s3(s3_bucket_name, 'udemy.png', processed_image_path)
 
         # Once you receive the message, you must delete it from the queue to acknowledge that you processed
         # the message and no longer need it
