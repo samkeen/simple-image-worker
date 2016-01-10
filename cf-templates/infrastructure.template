@@ -10,42 +10,10 @@
         "QueueName": "ImageManipulationWorkQueue"
       }
     },
-    "ProcessedImagesBucket": {
+    "ImagesBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
         "AccessControl": "PublicRead"
-      }
-    },
-    "BucketPublicReadAccess": {
-      "Type": "AWS::S3::BucketPolicy",
-      "Properties": {
-        "Bucket": {
-          "Ref": "ProcessedImagesBucket"
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Sid": "ReadAccessToAnonymous",
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": [
-                "s3:GetObject"
-              ],
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:aws:s3:::",
-                    {
-                      "Ref": "ProcessedImagesBucket"
-                    },
-                    "/*"
-                  ]
-                ]
-              }
-            }
-          ]
-        }
       }
     },
     "Ec2Role": {
@@ -101,7 +69,7 @@
                     [
                       "arn:aws:s3:::",
                       {
-                        "Ref": "ProcessedImagesBucket"
+                        "Ref": "ImagesBucket"
                       }
                     ]
                   ]
@@ -109,10 +77,9 @@
               ]
             },
             {
-              "Sid": "EnableReadWriteAccessToProcessedImagesBucket",
+              "Sid": "EnableWriteAccessToProcessedImagesBucket",
               "Effect": "Allow",
               "Action": [
-                "s3:GetObject",
                 "s3:PutObject"
               ],
               "Resource": [
@@ -122,7 +89,7 @@
                     [
                       "arn:aws:s3:::",
                       {
-                        "Ref": "ProcessedImagesBucket"
+                        "Ref": "ImagesBucket"
                       },
                       "/*"
                     ]
@@ -150,15 +117,17 @@
       },
       "Description": "The Work Queue to hold requests to process images"
     },
-    "ProcessedImagesBucket": {
+    "ImagesBucket": {
       "Value": {
-        "Ref": "ProcessedImagesBucket"
-      }
+        "Ref": "ImagesBucket"
+      },
+      "Description": "The S3 storage bucket for Images (original and processed)"
     },
     "WebAppRoleProfileName": {
       "Value": {
         "Ref": "Ec2RoleInstanceProfile"
-      }
+      },
+      "Description": "This is the AWS Role our App server uses. It grants write access to Images S3 bucket."
     }
   }
 }
