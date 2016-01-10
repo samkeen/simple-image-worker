@@ -2,7 +2,8 @@ import boto3
 import os
 from PIL import Image
 import requests
-
+import hashlib
+from urllib.parse import urlparse, unquote
 
 # ======= Excuse my procedural coding style ========
 # I felt it better to keep this sample as simple as possible, working under
@@ -24,6 +25,23 @@ def get_images_bucket_name():
     else:
         raise Exception('No "S3_BUCKET_NAME" environment variable found')
     return s3_bucket_name
+
+
+def parse_img_src_url(image_src_url):
+    """
+    Normalizes the source image URL and also produces a local image name derived from said URL.
+
+    :param image_src_url:
+    :return: Dictionary of img_src_url: <image's source URL>, img_local_name: <Local image filename>
+    """
+    image_src_url = image_src_url.strip()
+    source_image_url_parts = urlparse(image_src_url)
+    source_image_basename = os.path.basename(unquote(source_image_url_parts.path))
+    image_name = '{0}-{1}'.format(hashlib.md5(image_src_url.encode('utf-8')).hexdigest(), source_image_basename)
+    return {
+        'img_src_url': image_src_url,
+        'img_local_name': image_name
+    }
 
 
 def process_image(source_image_url, original_img_path):
@@ -49,11 +67,11 @@ def process_image(source_image_url, original_img_path):
             print("cannot create thumbnail for", original_img_path)
 
 
-def put_to_s3(s3_bucket_name, image_name, image_file_path):
+def put_to_s3(s3_bucket_name, image_name, img_local_path):
     s3 = boto3.resource('s3')
-    with open(image_file_path, 'rb') as image_bytes:
+    with open(img_local_path, 'rb') as image_bytes:
         # https://boto3.readthedocs.org/en/latest/reference/services/s3.html#S3.Client.put_object
-        s3.Bucket(s3_bucket_name).put_object(Key=image_name, Body=image_bytes)
+        s3.Bucket(s3_bucket_name).put_object(Key=image_name, Body=image_bytes, ACL='public-read')
 
 
 s3_bucket_name = get_images_bucket_name()
@@ -79,8 +97,12 @@ while True:
         # get reference to the download image directory
         this_directory = os.path.abspath(os.path.dirname(__file__))
         image_path = os.path.join(this_directory, 'images', 'downloaded_image')
-        processed_image_path = process_image(message_body, image_path)
-        put_to_s3(s3_bucket_name, 'udemy.png', processed_image_path)
+        image_source = parse_img_src_url(message_body)
+
+        processed_image_path = process_image(image_source['img_src_url'], image_path)
+        put_to_s3(s3_bucket_name,
+                  "THUMB-{0}".format(image_source['img_local_name']),
+                  processed_image_path)
 
         # Once you receive the message, you must delete it from the queue to acknowledge that you processed
         # the message and no longer need it
