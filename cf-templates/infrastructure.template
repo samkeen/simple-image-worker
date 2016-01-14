@@ -60,7 +60,8 @@
               "Sid": "EnableToLocateTheProcessedImagesBucket",
               "Effect": "Allow",
               "Action": [
-                "s3:ListBucket"
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
               ],
               "Resource": [
                 {
@@ -80,7 +81,8 @@
               "Sid": "EnableWriteAccessToProcessedImagesBucket",
               "Effect": "Allow",
               "Action": [
-                "s3:PutObject"
+                "s3:PutObject",
+                "s3:PutObjectAcl"
               ],
               "Resource": [
                 {
