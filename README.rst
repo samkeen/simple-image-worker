@@ -1,9 +1,11 @@
-Image Worker
-============
+Image Worker Example
+====================
 
 This is a simple example implementation of a Python process that can perform various image manipulations.
 It is meant to be used as a worker, watching a queue for new work.
 Planning to utilize it for a online course I am developing on Udemy.
+
+The associated Image Upload Web App can be found `here <https://github.com/samkeen/work-queue-backed-image-upload-example>`_
 
 Implementation Notes
 ********************
